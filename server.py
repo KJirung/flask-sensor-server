@@ -1,12 +1,16 @@
 from flask import Flask, request, jsonify
+import logging
 
 app = Flask(__name__)
 
 @app.route("/sensor", methods=["POST"])
-def sensor_data():
+def receive_data():
     data = request.get_json()
+    
+    # 로그 출력
     print("받은 데이터:", data)
-    return jsonify({"status": "received"}), 200
+    
+    # 또는 logging 사용
+    app.logger.info(f"센서 수신: {data}")
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    return jsonify({"status": "received"})
