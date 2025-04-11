@@ -1,20 +1,28 @@
 from flask import Flask, request, jsonify
 import logging
-import sys
+import os
+import json
 from datetime import datetime
 
-# Flask 앱 초기화
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
 
-# 로그 설정 (stdout으로 출력)
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+# 저장 폴더 생성 (없으면 자동 생성)
+LOG_DIR = "logs"
+os.makedirs(LOG_DIR, exist_ok=True)
 
 @app.route("/sensor", methods=["POST"])
 def receive_data():
     data = request.get_json()
 
-    # 수신 시간과 함께 로그 출력
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    app.logger.info(f"[{timestamp}] 📦 받은 센서 데이터:\n{data}")
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    filename = os.path.join(LOG_DIR, f"sensor_{timestamp}.json")
+
+    try:
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        app.logger.info(f"저장 완료: {filename}")
+    except Exception as e:
+        app.logger.error(f"저장 실패: {e}")
 
     return jsonify({"status": "received"})
