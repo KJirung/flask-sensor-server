@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>📡 사용자 연결 상태</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 10px; font-size: 14px; text-align: center; }
+        th { background-color: #f5f5f5; }
+        .connected { background-color: #28a745; color: white; }
+        .disconnected { background-color: #dc3545; color: white; }
+        .no-data, .error { background-color: gray; color: white; }
+        .btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        .btn:disabled {
+            background-color: #d6d6d6;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h2>📡 사용자 연결 상태 모니터링</h2>
+    <button id="notifyDisconnectedButton" class="btn" onclick="notifyDisconnectedUsers()">연결 해제된 사용자에게 푸시 알림 보내기</button>
+    <table>
+        <thead>
+            <tr>
+                <th>Device ID</th>
+                <th>마지막 수신 시간</th>
+                <th>상태</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in devices %}
+                <tr>
+                    <td>{{ d.device_id }}</td>
+                    <td>{{ d.last_time }}</td>
+                    <td class="{{ d.status }}">
+                        {% if d.status == "connected" %}✅ 연결됨
+                        {% elif d.status == "disconnected" %}❌ 끊김
+                        {% elif d.status == "no data" %}⚠ 데이터 없음
+                        {% else %}⚠ 오류
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        function notifyDisconnectedUsers() {
+            // 푸시 알림을 전송할 서버 API 호출
+            fetch('/notify_disconnected', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message); // 성공 메시지 알림
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('푸시 알림 전송에 실패했습니다.'); // 오류 메시지
+            });
+        }
+
+        // 페이지 로드 시 연결 해제된 사용자만 버튼 활성화
+        document.addEventListener('DOMContentLoaded', function () {
+            const rows = document.querySelectorAll('tbody tr');
+            let disconnectedUsersExist = false;
+
+            rows.forEach(row => {
+                const statusCell = row.cells[2];
+                if (statusCell && statusCell.textContent.includes('❌ 끊김')) {
+                    disconnectedUsersExist = true;
+                }
+            });
+
+            const button = document.getElementById('notifyDisconnectedButton');
+            button.disabled = !disconnectedUsersExist; // 연결 해제된 사용자가 없으면 버튼 비활성화
+        });
+    </script>
+</body>
+</html>
